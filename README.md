@@ -4,7 +4,7 @@
 
 1. **Clone the Repository:**
    ```bash
-   git clone <repo_url>
+   git clone https://github.com/ShivamGoyal1234/mobigic
 2. **Navigate to the Backend Directory:**
    ```bash
    cd backend
