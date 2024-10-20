@@ -77,11 +77,19 @@ function App() {
   };
 
   const register = async () => {
+    if (!username || !password) {
+      alert("Username and password are required");
+      return;
+    }
     try {
-      await api.post("/register", { username, password });
+      const response = await api.post("/register", { username, password });
       alert("Registered successfully");
     } catch (error) {
-      handleAPIError(error, "Registration failed");
+      if (error.response && error.response.status === 400) {
+        alert("Username already exists, please choose a different one");
+      } else {
+        handleAPIError(error, "Registration failed");
+      }
     }
   };
 
