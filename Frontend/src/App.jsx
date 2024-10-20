@@ -14,6 +14,7 @@ function App() {
     isLoading: false,
     isUploading: false,
   });
+  const [isFileValid, setIsFileValid] = useState(true);
 
   const {
     user,
@@ -45,13 +46,30 @@ function App() {
   };
 
   const handleFileChange = (e) => {
-    setState((prevState) => ({ ...prevState, file: e.target.files[0] }));
+    const selectedFile = e.target.files[0];
+
+    const allowedFileTypes = [
+      "image/jpeg",
+      "image/png",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (selectedFile && !allowedFileTypes.includes(selectedFile.type)) {
+      alert(
+        "Invalid file type. Only JPG, PNG, PDF, and DOC/DOCX files are allowed."
+      );
+      setIsFileValid(false);
+      return;
+    }
+
+    setIsFileValid(true);
+    setState((prevState) => ({ ...prevState, file: selectedFile }));
   };
 
-  const handleAPIError = (error, notFoundMsg, invalidMsg) => {
-    if (error.response && error.response.status === 401) {
-      alert(invalidMsg || "Unauthorized");
-    } else if (error.response && error.response.status === 404) {
+  const handleAPIError = (error, notFoundMsg) => {
+    if (error.response && error.response.status === 404) {
       alert(notFoundMsg || "Not found");
     } else {
       alert("Something went wrong. Please try again.");
@@ -97,17 +115,25 @@ function App() {
       alert("Please select a file to upload.");
       return;
     }
+
     setState((prevState) => ({ ...prevState, isUploading: true }));
 
     try {
       const formData = new FormData();
       formData.append("file", file);
+
       const response = await api.post("/upload", formData);
       alert(`File uploaded. Code: ${response.data.code}`);
+
       fetchFiles();
+
+      setState((prevState) => ({
+        ...prevState,
+        file: null,
+        isUploading: false,
+      }));
     } catch (error) {
       handleAPIError(error, "Upload failed");
-    } finally {
       setState((prevState) => ({ ...prevState, isUploading: false }));
     }
   };
@@ -131,7 +157,9 @@ function App() {
       await api.post(`/files/verify-code/${downloadId}`, {
         code: downloadCode,
       });
-      window.location.href = `${import.meta.env.VITE_APP_API_URL}/files/download/${downloadId}`;
+      window.location.href = `${
+        import.meta.env.VITE_APP_API_URL
+      }/files/download/${downloadId}`;
     } catch (error) {
       handleAPIError(error, "File not found", "Invalid code");
     } finally {
@@ -162,6 +190,7 @@ function App() {
     <div>
       {!user ? (
         <div>
+          <h1> Mobigic Registration Portal</h1>
           {renderInput(username, "username", "Username")}
           {renderInput(password, "password", "Password", "password")}
           <button onClick={register}>Register</button>
@@ -169,10 +198,12 @@ function App() {
         </div>
       ) : (
         <div>
-          <h2>Welcome, {user}</h2>
-          <button onClick={logout}>Logout</button>
+          <h2>
+            Welcome, {user}
+            <button onClick={logout}>Logout</button>
+          </h2>
           <input type="file" onChange={handleFileChange} />
-          <button onClick={uploadFile} disabled={isUploading}>
+          <button onClick={uploadFile} disabled={isUploading || !isFileValid}>
             {isUploading ? "Uploading..." : "Upload"}
           </button>
           <h3>Your Files:</h3>

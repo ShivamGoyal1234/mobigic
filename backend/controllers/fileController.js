@@ -3,16 +3,25 @@ const { generateCode } = require('../utils/codeGenerator');
 const fs = require('fs');
 
 const uploadFile = async (req, res) => {
+  const allowedFileTypes = ['image/jpeg', 'image/png', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+  if (!allowedFileTypes.includes(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Invalid file type. Only JPG, PNG, PDF, and DOC/DOCX files are allowed.' });
+  }
+
   const code = generateCode();
+
   const file = new File({
     filename: req.file.filename,
     path: req.file.path,
     code: code,
     user: req.userId,
   });
+
   await file.save();
   res.json({ code });
 };
+
 
 const getUserFiles = async (req, res) => {
   const files = await File.find({ user: req.userId });
